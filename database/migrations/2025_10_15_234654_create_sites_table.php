@@ -40,6 +40,11 @@ return new class extends Migration
             $table->json('feature_flags')->nullable();
             $table->json('options')->nullable();
 
+            // Default menu's op site-niveau
+            $table->foreignId('header_menu_id')->nullable();
+            $table->foreignId('footer_menu_id')->nullable();
+            $table->foreignId('sidebar_menu_id')->nullable();
+
             // als je 'team_meta' wilde:
             $table->json('team_meta')->nullable();
 

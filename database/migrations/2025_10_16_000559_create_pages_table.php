@@ -20,15 +20,12 @@ return new class extends Migration
 // Translatable JSON columns
             $table->json('title')->nullable();
             $table->json('excerpt')->nullable();
-            $table->json('content')->nullable(); // blocks/markdown later
             $table->string('template')->nullable(); // default, landing, etc.
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->timestamp('published_at')->nullable();
             $table->boolean('noindex')->default(false);
             $table->string('canonical_url')->nullable();
-            $table->json('meta_title')->nullable();
-            $table->json('meta_description')->nullable();
-            $table->integer('sort_order')->default(0);
+           $table->integer('sort_order')->default(0);
             $table->boolean('is_homepage')->default(false);
             $table->timestamps();
             $table->softDeletes();
@@ -36,6 +33,23 @@ return new class extends Migration
             $table->index(['site_id', 'parent_id']);
             $table->index(['status', 'published_at']);
             $table->index(['is_homepage']);
+
+            // Inhoud / SEO / opties
+            $table->json('content')->nullable(); // of blocks-json
+            $table->json('seo')->nullable();     // title/desc/open graph …
+            $table->json('meta')->nullable();
+            $table->json('meta_title')->nullable();
+            $table->json('meta_description')->nullable();
+
+            $table->json('options')->nullable();
+
+            // Menu overrides op pagina-niveau (vallen terug naar site-defaults als null)
+            $table->foreignId('header_menu_id')->nullable();
+            $table->foreignId('footer_menu_id')->nullable();
+            $table->foreignId('sidebar_menu_id')->nullable();
+
+            // Extra, arbitraire menu’s (JSON array met items zoals { "key": "cta", "menu_id": 5 })
+            $table->json('extra_menus')->nullable();
         });
     }
 

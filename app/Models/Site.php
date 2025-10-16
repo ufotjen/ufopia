@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -48,9 +50,24 @@ class Site extends Model
     {
         return $this->hasMany(Page::class);
     }
-    public function menus()
+    public function menus(): HasMany
     {
         return $this->hasMany(Menu::class);
+    }
+
+    public function headerMenu(): BelongsTo
+    {
+        return $this->belongsTo(Menu::class, 'header_menu_id');
+    }
+
+    public function footerMenu(): BelongsTo
+    {
+        return $this->belongsTo(Menu::class, 'footer_menu_id');
+    }
+
+    public function sidebarMenu(): BelongsTo
+    {
+        return $this->belongsTo(Menu::class, 'sidebar_menu_id');
     }
 
     public function owner()
