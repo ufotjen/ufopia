@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Translatable\HasTranslations;
 
@@ -37,7 +38,7 @@ class Page extends Model
         'sort_order',
         'is_homepage',
     ];
-    public $translatable = [
+    public array $translatable = [
         'title',
         'excerpt',
         'content',
@@ -55,12 +56,14 @@ class Page extends Model
         'is_homepage' => 'boolean',
     ];
 
+
+
     protected static function booted(): void
     {
         static::saving(function (Page $page) {
             // zorg dat slug bestaat
             if (blank($page->slug) && filled($page->title)) {
-                $page->slug = \Illuminate\Support\Str::slug(is_array($page->title) ? ($page->title['en'] ?? reset($page->title)) : $page->title);
+                $page->slug = Str::slug(is_array($page->title) ? ($page->title['en'] ?? reset($page->title)) : $page->title);
             }
 
             // bouw path: parent/path + slug (zonder leading slash)
