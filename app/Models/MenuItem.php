@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Traits\AutoTranslate;
+use App\Models\Traits\CanForceTranslates;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -15,7 +17,7 @@ class MenuItem extends Model implements HasMedia
     /** @use HasFactory<\Database\Factories\MenuItemFactory> */
     use HasFactory;
     use SoftDeletes;
-    use HasTranslations, InteractsWithMedia;
+    use HasTranslations, InteractsWithMedia, AutoTranslate, CanForceTranslates;
     protected $fillable = [
         'menu_id',
         'parent_id',
@@ -36,7 +38,6 @@ class MenuItem extends Model implements HasMedia
         'label',
     ];
     protected $casts = [
-        'label' => 'array',
         'route_params' => 'array',
         'visible' => 'boolean',
         'roles_visible' => 'array',
@@ -71,7 +72,7 @@ class MenuItem extends Model implements HasMedia
         $this->addMediaCollection('icon')->singleFile();
     }
 
-    public function registerMediaConversions(Media $media = null): void
+    public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('thumb')->width(64)->height(64)->performOnCollections('icon');
     }

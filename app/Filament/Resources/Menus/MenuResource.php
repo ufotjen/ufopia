@@ -33,7 +33,7 @@ class MenuResource extends Resource
 
     public static function infolist(Schema $schema): Schema
     {
-        return MenuInfoList::configure($schema);
+        return MenuInfolist::configure($schema);
     }
 
 

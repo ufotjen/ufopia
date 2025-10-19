@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\MenuLocation;
+use App\Models\Traits\AutoTranslate;
+use App\Models\Traits\CanForceTranslates;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -11,21 +13,21 @@ use Spatie\Translatable\HasTranslations;
 class Menu extends Model
 {
     /** @use HasFactory<\Database\Factories\MenuFactory> */
-    use HasFactory, HasTranslations;
+    use HasFactory, HasTranslations, AutoTranslate, CanForceTranslates;
 
     protected $fillable = [
         'site_id',
         'key',
         'title',
         'is_active',
-        'slug'
+        'slug',
+        'auto_translate',
+        'i18n_overrides'
     ];
 
     public array $translatable = ['title', 'slug'];
     protected $casts = [
-        'title' => 'string',
         'is_active' => 'boolean',
-        'slug' => 'string',
         'key' => MenuLocation::class,
         'auto_translate' => 'boolean',
         'i18n_overrides' => 'array',

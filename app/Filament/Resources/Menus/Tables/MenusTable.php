@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Menus\Tables;
 
 use App\Filament\Components\TranslationTabs;
 use App\Filament\Tables\Actions\I18nActions;
+use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -23,10 +24,13 @@ class MenusTable
                 ...TranslationTabs::table(
                     fields: ['title','slug'],            // of null = auto
                     componentMap: ['slug' => 'short'],   // optioneel: 'wrap' / 'short'
-                    showCompleteness: true
                 ),
-                TextColumn::make('key')->label('Locatie')->badge()->sortable(),
-                TextColumn::make('updated_at')->since()->label('Bijgewerkt')->sortable(),
+                TextColumn::make('key')
+                    ->label('Locatie')
+                    ->badge()
+                    ->sortable()
+                    ->formatStateUsing(fn ($state) => $state instanceof BackedEnum ? $state->value : (string) $state),
+                 TextColumn::make('updated_at')->since()->label('Bijgewerkt')->sortable(),
             ])
             ->filters([
                 SelectFilter::make('site_id')->relationship('site', 'name')->label('Site'),

@@ -72,7 +72,7 @@ final class I18nControls
      * - Toggle: auto_translate
      * - CheckboxList: i18n_overrides.locked (gelockte talen)
      *
-     * @return array<\Filament\Forms\Components\Component>
+     * @return array<>
      */
     public static function make(): array
     {
@@ -91,7 +91,6 @@ final class I18nControls
             CheckboxList::make('i18n_overrides.locked')
                 ->label('Handmatig beheren (niet auto-vertalen)')
                 ->options(self::options(markFallback: true))
-                ->columns(2)
                 ->helperText('Geselecteerde talen worden nooit automatisch overschreven.'),
         ];
     }

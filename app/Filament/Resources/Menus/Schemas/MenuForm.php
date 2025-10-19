@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Menus\Schemas;
 
 use App\Enums\MenuLocation;
 use App\Filament\Components\TranslationTabs;
+use App\Filament\Forms\Components\Reusable\I18nControls;
 use App\Models\Menu;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -13,7 +14,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\Enum as EnumRule;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 
 class MenuForm
@@ -39,10 +40,11 @@ class MenuForm
                         ])
                         ->required()
                         ->native(false)
-                        ->rule(new EnumRule(MenuLocation::class))
-                        ->rule(fn(Get $get) => (new Unique('menus', 'key'))
-                            ->where('site_id', (int)$get('site_id'))
-                            ->ignore(request()->route('record')))
+                        ->rule(fn (Get $get, ? Menu $record) =>
+                        Rule::unique('menus', 'key')
+                            ->where(fn ($q) => $q->where('site_id', (int) ($get('site_id') ?? $record?->site_id)))
+                            ->ignore($record?->getKey())
+                        )
                         ->helperText('Per site is elke locatie uniek. "Other" enkel voor uitzonderingen.'),
 
                     Toggle::make('sync_slug')
@@ -50,9 +52,10 @@ class MenuForm
                         ->default(true)
                         ->inline(false)
                         ->dehydrated(false),
+                    ...I18nControls::make(),
 
                     TranslationTabs::form(
-                        fields: ['title', 'slug'], // of null = auto
+                        fields: [], // of null = auto
                         schemaForLocale: function (string $loc, bool $isFallback) {
                             return [
                                 TextInput::make("title.$loc")

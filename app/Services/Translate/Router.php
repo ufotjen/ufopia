@@ -20,10 +20,15 @@ class Router
         $wordCount    = preg_match_all('/\p{L}+/u', $plain, $m);
         $hasHtml      = $plain !== $text;
         $hasSentences = (bool) preg_match('/[.!?](\s|$)/u', $plain);
+        $field      = $ctx['field'] ?? null;
+        $deeplFields= ['title','tag','tagline','label','button','cta','slug'];
 
-        if ($len >= $minChars || $wordCount >= $minWords || $hasHtml || $hasSentences) {
-            return TranslationProviders::OpenAI;   // lange/semantische tekst
+
+        $wordCount = preg_match_all('/\p{L}+/u', $plain);
+
+        if ((!$hasSentences || $wordCount <= 3) && !$hasHtml && ($field === null || in_array($field, $deeplFields, true))) {
+            return TranslationProviders::DeepL;   // labels, 1–2 woordenq
         }
-        return TranslationProviders::DeepL;        // kort/letterlijk
+        return TranslationProviders::OpenAI;
     }
 }

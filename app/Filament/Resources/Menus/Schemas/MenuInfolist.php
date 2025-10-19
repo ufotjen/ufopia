@@ -12,21 +12,22 @@ class MenuInfolist
 {
     public static function configure(Schema $schema): Schema
     {
-        return $schema
-            ->components([
-                // 🟢 Statusbar met per-taal badges (title + slug aanwezig?)
-                Section::make('Vertaalstatus')
-                    ->columns(count(I18nControls::locales()))
-                    ->schema(static::statusBadges()),
+        $cols = count(I18nControls::locales());
 
-                // 🌐 Tabs per taal met de vertaalde velden
-                ...TranslationTabs::infolist(
-                    fields: ['title', 'slug'], // zet op null om auto uit $translatable te nemen
-                    componentMap: [
-                        // voorbeeld: 'team_meta' => 'json', 'content' => 'html'
-                    ]
-                ),
-            ]);
+        return $schema->components([
+            Section::make('Vertaalstatus')
+                ->columns($cols)
+                ->schema(static::statusBadges())->columnSpanFull(),
+            Section::make('Vertaling')
+                ->schema(
+                    TranslationTabs::infolist(
+                        fields: ['title', 'slug'],
+                        componentMap: [],        // optioneel; matrix gebruikt vooral TextEntry
+                        layout: 'matrix'         // ← DIT schakelt je nieuwe layout aan
+                    )
+                )->columnSpanFull(),
+
+        ]);
     }
 
     /**
@@ -38,29 +39,36 @@ class MenuInfolist
         $badges = [];
 
         foreach (I18nControls::locales() as $loc) {
-            $label = strtoupper($loc) . ($loc === I18nControls::fallback() ? ' (default)' : '');
+            $label = strtoupper($loc)
+                . ($loc === I18nControls::fallback() ? ' (default)' : '');
 
             $badges[] = TextEntry::make("status_$loc")
                 ->label($label)
                 ->badge()
                 ->getStateUsing(function ($record) use ($loc) {
-                    $title = (string) data_get($record, "title.$loc", '');
-                    $slug  = (string) data_get($record, "slug.$loc", '');
+                    // Probeer alle vertalingen via Spatie
+                    $titleVals = method_exists($record, 'getTranslations')
+                        ? (array) $record->getTranslations('title')
+                        : (array) data_get($record, 'title', []);
+
+                    $slugVals = method_exists($record, 'getTranslations')
+                        ? (array) $record->getTranslations('slug')
+                        : (array) data_get($record, 'slug', []);
+
+                    // Als het strings zijn (current-locale), maak er een array van
+                    if (is_string($titleVals)) $titleVals = [$loc => $titleVals];
+                    if (is_string($slugVals))  $slugVals  = [$loc => $slugVals];
+
+                    $title = trim((string) ($titleVals[$loc] ?? ''));
+                    $slug  = trim((string) ($slugVals[$loc]  ?? ''));
 
                     $missing = [];
                     if ($title === '') $missing[] = 'title';
-                    if ($slug === '')  $missing[] = 'slug';
+                    if ($slug  === '') $missing[] = 'slug';
 
-                    if (empty($missing)) {
-                        return '✓ ok';
-                    }
-
-                    return '!' . ' ontbreekt: ' . implode(', ', $missing);
+                    return empty($missing) ? '✓ ok' : '! ontbreekt: ' . implode(', ', $missing);
                 })
-                ->color(function ($state) {
-                    if (str_starts_with($state, '✓')) return 'success';
-                    return 'warning';
-                });
+                ->color(fn (string $state) => str_starts_with($state, '✓') ? 'success' : 'warning');
         }
 
         return $badges;

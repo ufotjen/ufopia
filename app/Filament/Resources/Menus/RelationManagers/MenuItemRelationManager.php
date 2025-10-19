@@ -25,7 +25,8 @@ use Filament\{Actions\BulkActionGroup,
     Schemas\Schema,
     Tables\Columns\TextColumn,
     Tables\Filters\TrashedFilter,
-    Tables\Table};
+    Tables\Table
+};
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MenuItemRelationManager extends RelationManager
@@ -47,41 +48,20 @@ class MenuItemRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Meta')
-            ->schema([
-                TranslationTabs::form(),
+            Section::make('Meta')->schema([
+                ...I18nControls::make(),
+
+                // ⬇️ Alleen 'label' is vertaalbaar op MenuItem
+                TranslationTabs::form(
+                    fields: ['label'],
+                    componentMap: ['label' => 'textarea'] // of weglaten/aanpassen naar wens
+                ),
+
                 TextInput::make('url')->label('URL')->required()->maxLength(255),
                 Toggle::make('is_active')->label('Actief')->default(true),
             ]),
-            Section::make('Icon')
-                ->schema([
-                    Radio::make('icon_mode')
-                        ->label('Icon bron')
-                        ->options([
-                            'none'  => 'Geen',
-                            'media' => 'Upload (afbeelding / SVG)',
-                            'class' => 'Icon class (thema)',
-                        ])
-                        ->inline()
-                        ->default('none')
-                        ->live(),
-
-                    // Media upload (alleen als mode=media)
-                    SpatieMediaLibraryFileUpload::make('icon')
-                        ->label('Icon upload')
-                        ->collection('icon')
-                        ->image()
-                        ->acceptedFileTypes(['image/png','image/webp','image/svg+xml'])
-                        ->visible(fn ($get) => $get('icon_mode') === 'media'),
-
-                    // Icon class (alleen als mode=class)
-                    TextInput::make('icon_class')
-                        ->label('Icon class')
-                        ->placeholder('bv. lucide-home / heroicon-m-home / ph-house')
-                        ->helperText('Kies een passende class op basis van het gekozen thema.')
-                        ->visible(fn ($get) => $get('icon_mode') === 'class'),
-                ])
-                   ])->columns(1);
+            IconPicker::make()
+        ])->columns(1);
     }
 
     public function table(Table $table): Table
@@ -91,14 +71,11 @@ class MenuItemRelationManager extends RelationManager
             ->columns([
                 ...TranslationTabs::table(),
                 TextColumn::make('url')->label('URL')->wrap(),
-                TextColumn::make('parent.label')->label('Parent')->toggleable(),
+                TextColumn::make('parent.title')->label('Parent')->toggleable(),
                 TextColumn::make('icon_mode')->badge(),
-
-               I18nControls::make(),
-                IconPicker::make()
             ])
             ->filters([
-                TrashedFilter::make()->visible(fn () => in_array(SoftDeletes::class, class_uses_recursive(MenuItem::class))),
+                TrashedFilter::make()->visible(fn() => in_array(SoftDeletes::class, class_uses_recursive(MenuItem::class))),
             ])
             ->headerActions([
                 // ⬅️ Tables\Actions\CreateAction: linkt automatisch aan de relatie
