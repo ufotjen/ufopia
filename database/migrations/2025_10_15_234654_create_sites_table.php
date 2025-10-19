@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('sites', function (Blueprint $table) {
             $table->id();
 
-            // GEEN ->after('id') hier
             $table->foreignId('owner_id')
                 ->nullable()
                 ->constrained('users')

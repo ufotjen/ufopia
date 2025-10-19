@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -37,13 +36,16 @@ class Page extends Model
         'meta_description',
         'sort_order',
         'is_homepage',
+        'seo'
     ];
     public array $translatable = [
         'title',
         'excerpt',
         'content',
+        'slug',
         'meta_title',
         'meta_description',
+        'seo'
     ];
     protected $casts = [
         'title' => 'array',
@@ -54,9 +56,17 @@ class Page extends Model
         'noindex' => 'boolean',
         'published_at' => 'datetime',
         'is_homepage' => 'boolean',
+        'auto_translate' => 'boolean',
+        'i18n_overrides' => 'array',
+        'seo' => 'array',
     ];
 
 
+
+    public function lockedLocales(): array
+    {
+        return array_values($this->i18n_overrides['locked'] ?? []);
+    }
 
     protected static function booted(): void
     {

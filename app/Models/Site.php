@@ -2,18 +2,22 @@
 
 namespace App\Models;
 
+use App\Models\Traits\AutoTranslate;
+use App\Models\Traits\CanForceTranslates;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\Translatable\HasTranslations;
 
 class Site extends Model
 {
     use HasFactory;
     use SoftDeletes;
     use InteractsWithMedia;
+    use HasTranslations, CanForceTranslates, AutoTranslate;
     protected $fillable = [
         'name',
         'slug',
@@ -28,6 +32,11 @@ class Site extends Model
         'contact_email',
         'feature_flags',
         'options',
+        'team_meta',
+        'owner_id',
+        'header_menu_id',
+        'footer_menu_id',
+        'sidebar_menu_id'
     ];
     protected $casts = [
         'is_active' => 'boolean',
@@ -36,6 +45,19 @@ class Site extends Model
         'theme_overrides' => 'array',
         'feature_flags' => 'array',
         'options' => 'array',
+        'team_meta' => 'array',
+        'auto_translate' => 'boolean',
+        'i18n_overrides' => 'array',
+    ];
+
+    public function lockedLocales(): array
+    {
+        return array_values($this->i18n_overrides['locked'] ?? []);
+    }
+
+    public array $translatable = [
+        'slug',
+        'team_meta',
     ];
 // Media collections (logo, favicon, social image)
     public function registerMediaCollections(): void
@@ -53,6 +75,11 @@ class Site extends Model
     public function menus(): HasMany
     {
         return $this->hasMany(Menu::class);
+    }
+
+    public function theme(): BelongsTo
+    {
+        return $this->belongsTo(Theme::class, 'theme_key', 'key');
     }
 
     public function headerMenu(): BelongsTo

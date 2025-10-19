@@ -6,11 +6,12 @@ use App\Enums\MenuLocation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Spatie\Translatable\HasTranslations;
 
 class Menu extends Model
 {
     /** @use HasFactory<\Database\Factories\MenuFactory> */
-    use HasFactory;
+    use HasFactory, HasTranslations;
 
     protected $fillable = [
         'site_id',
@@ -19,11 +20,21 @@ class Menu extends Model
         'is_active',
         'slug'
     ];
+
+    public array $translatable = ['title', 'slug'];
     protected $casts = [
-        'title' => 'array',
+        'title' => 'string',
         'is_active' => 'boolean',
+        'slug' => 'string',
         'key' => MenuLocation::class,
+        'auto_translate' => 'boolean',
+        'i18n_overrides' => 'array',
     ];
+
+    public function lockedLocales(): array
+    {
+        return array_values($this->i18n_overrides['locked'] ?? []);
+    }
 
     public function site()
     {
@@ -46,10 +57,25 @@ class Menu extends Model
     protected static function booted(): void
     {
         static::saving(function (Menu $menu) {
+            // Als slug leeg is, genereer een basis voor de fallback-locale
             if (blank($menu->slug)) {
-                $title = $menu->title;
-                $base = is_array($title) ? ($title['en'] ?? reset($title)) : $title;
-                $menu->slug = Str::slug((string) ($base ?: $menu->key ?: 'menu'));
+                $fallback = config('app.fallback_locale', 'en');
+
+                // Titel prefereren (fallback-locale), anders 1e beschikbare waarde
+                $title = $menu->getTranslation('title', $fallback);
+                if (!$title) {
+                    $arr = is_array($menu->title) ? $menu->title : [];
+                    $title = $arr[$fallback] ?? (reset($arr) ?: null);
+                }
+
+                // Enum → string value
+                $keyString = $menu->key instanceof \BackedEnum ? $menu->key->value : (string) $menu->key;
+
+                $base = $title ?: $keyString ?: 'menu';
+                $slug = Str::slug($base);
+
+                // Zet expliciet de vertaling voor de fallback-locale
+                $menu->setTranslation('slug', $fallback, $slug);
             }
         });
     }

@@ -1,16 +1,17 @@
 <?php
 
-
 namespace App\Filament\Resources\Users\RelationManagers;
 
+use App\Filament\Components\TranslationTabs;
+use App\Filament\Forms\Components\Reusable\I18nControls;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\{Get, Set};        // ✅ 4.1 Set/Get
 use Illuminate\Support\Str;
 
 class UserProfileForm
@@ -18,10 +19,10 @@ class UserProfileForm
     public static function schema(): array
     {
         return [
-            // In een RelationManager wil je deze vaak NIET tonen. Zie stap 2.
+            // ⚠️ In een RelationManager meestal verbergen:
             Section::make('Koppeling')
                 ->columns(1)
-                ->extraAttributes(['class' => 'space-y-4'])
+                ->hidden()                                      // ← verberg in RM-context
                 ->schema([
                     Select::make('user_id')
                         ->label('Gebruiker')
@@ -33,7 +34,6 @@ class UserProfileForm
 
             Section::make('Profiel')
                 ->columns(1)
-                ->extraAttributes(['class' => 'space-y-4'])
                 ->schema([
                     TextInput::make('username')
                         ->label('Gebruikersnaam')
@@ -41,18 +41,11 @@ class UserProfileForm
                         ->unique(ignoreRecord: true)
                         ->maxLength(190)
                         ->live(debounce: 400)
-                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                        ->afterStateUpdated(function (Set $set, Get $get, ?string $state) {
                             if ($get('sync_slug')) {
                                 $set('slug', Str::slug((string) $state));
                             }
                         }),
-
-                    TextInput::make('slug')
-                        ->label('Slug')
-                        ->required()
-                        ->unique(ignoreRecord: true)
-                        ->maxLength(190)
-                        ->helperText('Gebruikt in de URL. Zet “koppel slug” uit om handmatig aan te passen.'),
 
                     Toggle::make('sync_slug')
                         ->label('Koppel slug aan gebruikersnaam')
@@ -60,19 +53,43 @@ class UserProfileForm
                         ->inline(false)
                         ->dehydrated(false),
 
-                    TextInput::make('tagline')
-                        ->label('Slagzin')
-                        ->maxLength(255),
+                    TextInput::make('slug')
+                        ->label('Slug')
+                        ->required()
+                        ->unique(ignoreRecord: true)
+                        ->rules(['alpha_dash'])
+                        ->maxLength(190)
+                        ->helperText('Gebruikt in de URL. Zet “koppel slug” uit om handmatig aan te passen.'),
 
-                    RichEditor::make('bio')
-                        ->label('Bio')
-                        ->toolbarButtons([
-                            'bold','italic','underline','strike',
-                            'h2','h3','blockquote','codeBlock',
-                            'bulletList','orderedList',
-                            'link','horizontalRule','undo','redo','table',
-                        ])
-                        ->fileAttachmentsDirectory('profiles/bio'),
+                    ...I18nControls::make(),
+
+                    // 🔤 Alleen translatable velden in tabs:
+                    TranslationTabs::form(
+                        fields: ['tagline', 'bio'],
+                        schemaForLocale: function (string $loc, bool $isFallback) {
+                            return [
+                                TextInput::make("tagline.$loc")
+                                    ->label('Slagzin')
+                                    ->maxLength(190),
+
+                                // Je kan RichEditor ook via componentMap forceren;
+                                // hier doen we ’m gewoon expliciet.
+                                RichEditor::make("bio.$loc")
+                                    ->label('Bio')
+                                    ->columnSpanFull()
+                                    ->toolbarButtons([
+                                        'bold','italic','underline','strike',
+                                        'h2','h3','blockquote','codeBlock',
+                                        'bulletList','orderedList',
+                                        'link','horizontalRule','undo','redo','table',
+                                    ])
+                                    ->fileAttachmentsDirectory('profiles/bio'),
+                            ];
+                        },
+                        componentMap: [
+                            'bio' => 'rich',                     // optioneel, maar consistent
+                        ]
+                    ),
 
                     Toggle::make('is_profile_active')
                         ->label('Profiel actief')
@@ -81,7 +98,6 @@ class UserProfileForm
 
             Section::make('Media')
                 ->columns(1)
-                ->extraAttributes(['class' => 'space-y-4'])
                 ->schema([
                     SpatieMediaLibraryFileUpload::make('avatar')
                         ->label('Avatar')
@@ -105,7 +121,6 @@ class UserProfileForm
 
             Section::make('Social & voorkeuren')
                 ->columns(1)
-                ->extraAttributes(['class' => 'space-y-4'])
                 ->schema([
                     KeyValue::make('social_links')
                         ->label('Social links')

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Traits\AutoTranslate;
+use App\Models\Traits\CanForceTranslates;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -9,10 +11,11 @@ use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Spatie\Translatable\HasTranslations;
 
 class UserProfile extends Model implements HasMedia
 {
-    use SoftDeletes, InteractsWithMedia;
+    use SoftDeletes, InteractsWithMedia, HasTranslations, CanForceTranslates, AutoTranslate;
 
     protected $fillable = [
         'user_id',
@@ -29,6 +32,18 @@ class UserProfile extends Model implements HasMedia
         'is_profile_active' => 'bool',
         'social_links' => 'array',
         'preferences' => 'array',
+        'auto_translate' => 'boolean',
+        'i18n_overrides' => 'array',
+    ];
+
+    public function lockedLocales(): array
+    {
+        return array_values($this->i18n_overrides['locked'] ?? []);
+    }
+
+    public array $translatable = [
+        'tagline',
+        'bio',
     ];
 
     public function registerMediaCollections(): void

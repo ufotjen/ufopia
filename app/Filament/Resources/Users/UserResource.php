@@ -14,14 +14,13 @@ use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-user-circle'; // 🔧 veilig string icoon
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -49,17 +48,16 @@ class UserResource extends Resource
     {
         return [
             UserProfileRelationManager::class,
-
         ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => ListUsers::route('/'),
+            'index'  => ListUsers::route('/'),
             'create' => CreateUser::route('/create'),
-            'view' => ViewUser::route('/{record}'),
-            'edit' => EditUser::route('/{record}/edit'),
+            'view'   => ViewUser::route('/{record}'),
+            'edit'   => EditUser::route('/{record}/edit'),
         ];
     }
 }

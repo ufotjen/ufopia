@@ -17,38 +17,36 @@ class UsersTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->defaultSort('updated_at', 'desc')
             ->columns([
                 TextColumn::make('name')
                     ->label('Naam')
                     ->searchable()
                     ->sortable()
-                    ->wrap() // lange namen breken netjes
-                    ->tooltip(fn($state) => $state) // hover toont volledige naam
-                    // ->description('Volledige weergavenaam', position: 'below') // optioneel
-                    ->toggleable(), // kolom verberg-/toonbaar in table settings
-
+                    ->wrap()
+                    ->tooltip(fn ($state) => $state)
+                    ->toggleable(),
 
                 TextColumn::make('email')
                     ->label('E-mail')
                     ->searchable()
                     ->sortable()
-                    ->copyable()               // klik-om-te-kopiëren
+                    ->copyable()
                     ->copyMessage('E-mail gekopieerd')
                     ->copyMessageDuration(1500)
-                    ->placeholder('—')         // als leeg
-                    ->icon('heroicon-m-envelope') // klein icoon vooraan (optioneel)
+                    ->placeholder('—')
                     ->wrap(),
 
                 TextColumn::make('email_verified_at')
                     ->label('E-mail geverifieerd')
-                    ->dateTime('Y-MM-dd HH:mm')
+                    ->dateTime('Y-m-d H:i')
                     ->placeholder('Niet bevestigd')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('two_factor_confirmed_at')
                     ->label('2FA bevestigd')
-                    ->dateTime('Y-MM-dd HH:mm')
+                    ->dateTime('Y-m-d H:i')
                     ->placeholder('Niet ingesteld')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -56,10 +54,11 @@ class UsersTable
                 TextColumn::make('roles.name')
                     ->label('Rollen')
                     ->badge()
-                    ->separator(', '),
+                    ->separator(', ')
+                    ->toggleable(),
 
-                IconColumn::make('is_inactive')
-                    ->label('Actief')
+                IconColumn::make('is_active')   // ← bestond wel in je model
+                ->label('Actief')
                     ->boolean(),
 
                 IconColumn::make('soft_blocked')
@@ -72,17 +71,20 @@ class UsersTable
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('created_at')
-                    ->dateTime()
+                    ->dateTime('Y-m-d H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('updated_at')
-                    ->dateTime()
+                    ->dateTime('Y-m-d H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('role')->relationship('roles', 'name')->label('Rol'),
+                SelectFilter::make('role')
+                    ->label('Rol')
+                    ->relationship('roles', 'name')
+                    ->multiple(), // vaak nuttig
             ])
             ->recordActions([
                 ViewAction::make(),

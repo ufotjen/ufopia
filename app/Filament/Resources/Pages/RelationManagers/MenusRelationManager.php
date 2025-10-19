@@ -4,12 +4,11 @@ namespace App\Filament\Resources\Pages\RelationManagers;
 
 use App\Filament\Resources\Menus\MenuResource;
 use Filament\Actions\AttachAction;
-use Filament\Actions\CreateAction;
 use Filament\Actions\DetachAction;
 use Filament\Actions\DetachBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -23,22 +22,25 @@ class MenusRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
+        $loc = app()->getLocale();
+
         return $table
-            ->recordTitleAttribute('name')
+            ->recordTitleAttribute("title->$loc")
             ->columns([
-                TextColumn::make('title')
+                TextColumn::make("title.$loc")
                     ->label('Naam')
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('slug')
+                TextColumn::make("slug.$loc")
                     ->label('Slug')
                     ->toggleable()
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('location')
-                    ->label('Locatie')
+                // Pivot-veld (ik ga uit van 'slot' i.p.v. 'location' zoals je Repeater)
+                TextColumn::make('pivot.slot')
+                    ->label('Slot')
                     ->badge()
                     ->toggleable(),
 
@@ -50,51 +52,38 @@ class MenusRelationManager extends RelationManager
                 TextColumn::make('updated_at')
                     ->label('Bijgewerkt')
                     ->since()
-                    ->toggleable(isToggledHiddenByDefault: true)])
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
             ->headerActions([
+                // Attach naar dezelfde site als de Page (owner record)
                 AttachAction::make()
+                    ->label('Menu koppelen')
+                    ->recordSelectOptionsQuery(fn ($query) => $query->where('site_id', $this->getOwnerRecord()->site_id))
+                    ->preloadRecordSelect()
                     ->schema([
-                        // 'recordId' is de standaard attach-picker
-                        Select::make('recordId')
-                            ->label('Menu')
-                            ->relationship('extraMenus', 'title')
+                        // pivot veld (slot)
+                        TextInput::make('slot')
+                            ->label('Slot')
+                            ->maxLength(50)
                             ->required(),
-                        Select::make('location')
-                            ->label('Locatie')
-                            ->options([
-                                'header'  => 'Header',
-                                'footer'  => 'Footer',
-                                'sidebar' => 'Sidebar',
-                                'custom'  => 'Custom',
-                            ])
-                            ->required(),
-                    ])
-                    ->using(function ($page, array $data) {
-                        // per locatie maximaal één menu (optioneel beleid)
-                        $page->extraMenus()->wherePivot('location', $data['location'])->detach();
-                        $page->extraMenus()->attach($data['recordId'], ['location' => $data['location']]);
-                    }),
+                    ]),
             ])
             ->recordActions([
-                    EditAction::make()
-                        ->schema([
-                            Select::make('location')
-                                ->label('Locatie')
-                                ->options([
-                                    'header'  => 'Header',
-                                    'footer'  => 'Footer',
-                                    'sidebar' => 'Sidebar',
-                                    'custom'  => 'Custom',
-                                ])->required(),
-                        ]),
-                    DetachAction::make()->label('Ontkoppelen'),
+                // Pivot bewerken (alleen 'slot' hier)
+                EditAction::make()
+                    ->label('Slot wijzigen')
+                    ->modalHeading('Slot wijzigen')
+                    ->schema([
+                        TextInput::make('slot')
+                            ->label('Slot')
+                            ->maxLength(50)
+                            ->required(),
+                    ]),
+                DetachAction::make()->label('Ontkoppelen'),
                 ViewAction::make(),
-
-
             ])
             ->groupedBulkActions([
-                DetachBulkAction::make()
-                    ->label('Ontkoppelen (bulk)'),
+                DetachBulkAction::make()->label('Ontkoppelen (bulk)'),
             ]);
     }
 }

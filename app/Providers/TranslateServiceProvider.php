@@ -6,7 +6,7 @@ use App\Contracts\TranslateContract;
 use App\Services\Translate\DeepLTranslator;
 use App\Services\Translate\OpenAiTranslator;
 use App\Services\Translate\SmartTranslator;
-use DeepL\DeepLClient;
+use DeepL\Translator;
 use Illuminate\Support\ServiceProvider;
 
 class TranslateServiceProvider extends ServiceProvider
@@ -16,18 +16,25 @@ class TranslateServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(TranslateContract::class, function () {
+        $this->app->singleton(TranslateContract::class, function () {
+            // Keys kunnen uit config/services.php of uit config/translation.php komen
+            $deeplKey   = config('services.deepl.key')    ?? config('translation.deepl.key');
+            $openaiKey  = config('services.openai.key')   ?? config('translation.openai.key');
+            $openaiModel= config('services.openai.model') ?? config('translation.openai.model', 'gpt-4o-mini');
+
             $deepl = null;
-            if ($key = config('services.deepl.key')) {
-                $deepl = new DeepLTranslator(new DeepLClient($key));
+            if ($deeplKey) {
+                // DeepL SDK verwacht DeepL\Translator
+                $deepl = new DeepLTranslator(new Translator($deeplKey));
             }
 
             $openai = null;
-            if ($okey = config('services.openai.key')) {
-                $openai = new OpenAITranslator($okey, config('services.openai.model', 'gpt-4o-mini'));
+            if ($openaiKey) {
+                // Gebruik je eigen klassenaam precies zoals gedefinieerd: OpenAiTranslator
+                $openai = new OpenAiTranslator($openaiKey, $openaiModel);
             }
 
-            // SmartTranslator kiest per veld/lengte en fallbackt
+            // Slimme router met fallback (OpenAI ⇄ DeepL)
             return new SmartTranslator($deepl, $openai);
         });
     }

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Users\Pages;
 
 use App\Filament\Resources\Users\Schemas\UserInfolist;
 use App\Filament\Resources\Users\UserResource;
+use App\Filament\Tables\Actions\I18nActions;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;

@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources\Pages\Schemas;
 
-use App\Models\Page;
+use App\Filament\Components\TranslationTabs;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -15,14 +15,21 @@ class PageInfolist
     {
         return $schema
             ->components([
-                Section::make('Overzicht')->columns(2)->schema([
+                ...TranslationTabs::infolist(
+                    componentMap: [
+                        'content'   => 'html',
+                        'seo'       => 'json',
+                        'team_meta' => 'json',
+                    ]
+                ),
+
+                Section::make('Overzicht')->columns()->schema([
                     TextEntry::make('site.name')->label('Site'),
                     TextEntry::make('author.name')->label('Auteur'),
                     TextEntry::make('editor.name')->label('Laatst bewerkt door'),
-                    TextEntry::make('title')->label('Titel'),
-                    TextEntry::make('slug')->label('Slug'),
                     IconEntry::make('is_published')->label('Gepubliceerd')->boolean(),
                 ]),
+
                 Section::make('Menus (effective)')
                     ->columns(3)
                     ->schema([
@@ -52,9 +59,10 @@ class PageInfolist
                             TextEntry::make('menu.title')->label('Menu')->badge(),
                             TextEntry::make('slot')->label('Slot')->placeholder('—'),
                         ])
-                        ->columns(2),
+                        ->columns(),
                 ]),
-                Section::make('Meta')->columns(2)->schema([
+
+                Section::make('Meta')->columns()->schema([
                     TextEntry::make('created_at')->since(),
                     TextEntry::make('updated_at')->since(),
                 ]),

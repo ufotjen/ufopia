@@ -15,7 +15,6 @@ use App\Models\Site;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -62,6 +61,18 @@ class SiteResource extends Resource
             'view' => ViewSite::route('/{record}'),
             'edit' => EditSite::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with([
+                'owner:id,name',
+                'headerMenu:id,title',
+                'footerMenu:id,title',
+                'sidebarMenu:id,title',
+            ])
+            ->withCount(['menus', 'pages']);
     }
 
     public static function getRecordRouteBindingEloquentQuery(): Builder

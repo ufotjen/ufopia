@@ -3,15 +3,18 @@
 namespace App\Filament\Resources\Menus\Schemas;
 
 use App\Enums\MenuLocation;
+use App\Filament\Components\TranslationTabs;
+use App\Models\Menu;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\Unique;
 use Illuminate\Validation\Rules\Enum as EnumRule;
+use Illuminate\Validation\Rules\Unique;
 
 class MenuForm
 {
@@ -29,27 +32,18 @@ class MenuForm
                     Select::make('key')
                         ->label('Locatie')
                         ->options([
-                            MenuLocation::HEADER->value  => 'Header',
-                            MenuLocation::FOOTER->value  => 'Footer',
+                            MenuLocation::HEADER->value => 'Header',
+                            MenuLocation::FOOTER->value => 'Footer',
                             MenuLocation::SIDEBAR->value => 'Sidebar',
-                            MenuLocation::OTHER->value   => 'Other (nood)',
+                            MenuLocation::OTHER->value => 'Other (nood)',
                         ])
                         ->required()
                         ->native(false)
                         ->rule(new EnumRule(MenuLocation::class))
-                        ->rule(fn (Get $get) => (new Unique('menus','key'))
-                            ->where('site_id', (int) $get('site_id'))
+                        ->rule(fn(Get $get) => (new Unique('menus', 'key'))
+                            ->where('site_id', (int)$get('site_id'))
                             ->ignore(request()->route('record')))
                         ->helperText('Per site is elke locatie uniek. "Other" enkel voor uitzonderingen.'),
-
-                    TextInput::make('title')
-                        ->label('Titel')
-                        ->required()
-                        ->maxLength(190)
-                        ->live(debounce: 400)
-                        ->afterStateUpdated(function ($set, Get $get, ?string $state) {
-                            if ($get('sync_slug')) $set('slug', Str::slug((string) $state));
-                        }),
 
                     Toggle::make('sync_slug')
                         ->label('Koppel slug aan titel')
@@ -57,18 +51,31 @@ class MenuForm
                         ->inline(false)
                         ->dehydrated(false),
 
-                    TextInput::make('slug')
-                        ->label('Slug')
-                        ->required()
-                        ->rules(['alpha_dash'])
-                        ->unique(
-                            ignoreRecord: true,
-                            modifyRuleUsing: fn (Unique $rule, Get $get) =>
-                            $rule->where('site_id', (int) $get('site_id'))
-                        )
-                        ->live(debounce: 400),
+                    TranslationTabs::form(
+                        fields: ['title', 'slug'], // of null = auto
+                        schemaForLocale: function (string $loc, bool $isFallback) {
+                            return [
+                                TextInput::make("title.$loc")
+                                    ->label('Titel')
+                                    ->required($isFallback)
+                                    ->live(debounce: 400)
+                                    ->afterStateUpdated(function (Set $set, Get $get, ?string $state) use ($loc) {
+                                        if ($get('sync_slug')) {
+                                            $set("slug.$loc", Str::slug((string)$state));
+                                        }
+                                    }),
 
-                    Toggle::make('is_active')->label('Actief')->default(true),
+                                TextInput::make("slug.$loc")
+                                    ->label('Slug')
+                                    ->rules(['alpha_dash'])
+                                    ->unique(
+                                        table: Menu::class,                     // ← Menu i.p.v. Page
+                                        column: "slug->$loc",                  // JSON path per locale
+                                        ignoreRecord: true,
+                                        modifyRuleUsing: fn(Unique $rule, Get $get) => $rule->where('site_id', (int)$get('site_id'))
+                                    ),
+                            ];
+                        }),
                 ])
             ]);
     }

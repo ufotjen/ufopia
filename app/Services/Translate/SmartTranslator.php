@@ -6,12 +6,12 @@ use App\Enums\TranslationProviders;
 use App\Enums\TranslationProviders as tp;
 use App\Contracts\TranslateContract;
 
-class SmartTranslator implements TranslateContract
+readonly class SmartTranslator implements TranslateContract
 {
 
     public function __construct(
-        private readonly ?TranslateContract $deepl,
-        private readonly ?TranslateContract $openai,
+        private ?TranslateContract $deepl,
+        private ?TranslateContract $openai,
     ) {}
 
 

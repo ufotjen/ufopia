@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\RelationManagers;
 
+use App\Filament\Components\TranslationTabs;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\SpatieMediaLibraryImageEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -20,24 +21,28 @@ class UserProfileInfoList
             Section::make('Profiel')->columns(1)->schema([
                 TextEntry::make('username')->label('Gebruikersnaam'),
                 TextEntry::make('slug')->label('Slug'),
-                TextEntry::make('tagline')->label('Slagzin')->placeholder('—')->columnSpanFull(),
-                TextEntry::make('bio')->label('Bio')->placeholder('—')->columnSpanFull(),
+
+                // ✅ Alleen translatable velden tonen per locale:
+                ...TranslationTabs::infolist(
+                    fields: ['tagline', 'bio'],
+                    componentMap: ['bio' => 'html']  // bio als HTML tonen
+                ),
+
                 IconEntry::make('is_profile_active')->label('Profiel actief')->boolean(),
             ]),
 
-            // Heb je de Media Library plugin? Gebruik dan dit (en haal de comments weg):
-             Section::make('Media')->columns(1)->schema([
-                 SpatieMediaLibraryImageEntry::make('avatar')
-                     ->collection('avatar')
-                     ->label('Avatar')
-                     ->conversion('thumb')
-                     ->hiddenLabel(),
-                 SpatieMediaLibraryImageEntry::make('photos')
-                     ->collection('photos')
-                     ->label('Foto’s')
-                     ->limit(6)
-                     ->hiddenLabel(),
-             ]),
+            Section::make('Media')->columns(1)->schema([
+                SpatieMediaLibraryImageEntry::make('avatar')
+                    ->collection('avatar')
+                    ->label('Avatar')
+                    ->conversion('thumb')
+                    ->hiddenLabel(),
+                SpatieMediaLibraryImageEntry::make('photos')
+                    ->collection('photos')
+                    ->label('Foto’s')
+                    ->limit(6)
+                    ->hiddenLabel(),
+            ]),
 
             Section::make('Meta')->columns(1)->schema([
                 TextEntry::make('created_at')->label('Aangemaakt')->since(),
