@@ -18,15 +18,13 @@ jobs:
           cat > probe/probe.csproj <<'EOF'
           <Project Sdk="Microsoft.NET.Sdk">
             <PropertyGroup>
-              <OutputType>Exe</OutputType>
               <TargetFramework>net8.0</TargetFramework>
               <RuntimeIdentifier>win-x64</RuntimeIdentifier>
               <SelfContained>true</SelfContained>
             </PropertyGroup>
           </Project>
           EOF
-          echo 'Console.WriteLine("Ufopia runtime probe");' > probe/Program.cs
-          dotnet publish probe/probe.csproj -c Debug -r win-x64 --self-contained true
+          dotnet restore probe/probe.csproj -r win-x64
 
       - name: Copy runtime package cache
         run: |
