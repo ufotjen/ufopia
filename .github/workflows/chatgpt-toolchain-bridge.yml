@@ -1,0 +1,51 @@
+name: ChatGPT toolchain bridge
+
+on:
+  push:
+    branches:
+      - chatgpt-toolchain-bridge
+    paths:
+      - .github/workflows/chatgpt-toolchain-bridge.yml
+
+jobs:
+  package-toolchain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Prepare directories
+        run: mkdir -p bridge/dotnet bridge/godot bridge/templates downloads
+
+      - name: Download and unpack .NET 8.0.423 SDK
+        run: |
+          curl -fL --retry 5 --retry-delay 2 \
+            https://builds.dotnet.microsoft.com/dotnet/Sdk/8.0.423/dotnet-sdk-8.0.423-linux-x64.tar.gz \
+            -o downloads/dotnet-sdk.tar.gz
+          tar -xzf downloads/dotnet-sdk.tar.gz -C bridge/dotnet
+          bridge/dotnet/dotnet --info
+
+      - name: Download and unpack Godot 4.7.1 .NET Linux editor
+        run: |
+          curl -fL --retry 5 --retry-delay 2 \
+            https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_linux_x86_64.zip \
+            -o downloads/godot.zip
+          unzip -q downloads/godot.zip -d bridge/godot
+          find bridge/godot -maxdepth 2 -type f -name 'Godot*' -print
+
+      - name: Download only-needed Windows .NET export templates
+        run: |
+          curl -fL --retry 5 --retry-delay 2 \
+            https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_mono_export_templates.tpz \
+            -o downloads/templates.tpz
+          unzip -j downloads/templates.tpz 'templates/windows_debug_x86_64.exe' -d bridge/templates
+          unzip -j downloads/templates.tpz 'templates/windows_release_x86_64.exe' -d bridge/templates
+          unzip -j downloads/templates.tpz 'templates/version.txt' -d bridge/templates || true
+          ls -lh bridge/templates
+
+      - name: Upload compact toolchain bridge
+        uses: actions/upload-artifact@v4
+        with:
+          name: ufopia-linux-build-toolchain-4.7.1
+          path: bridge/
+          compression-level: 6
+          retention-days: 1
+          if-no-files-found: error
