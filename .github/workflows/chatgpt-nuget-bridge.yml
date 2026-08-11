@@ -1,0 +1,47 @@
+name: ChatGPT NuGet bridge
+
+on:
+  push:
+    branches:
+      - chatgpt-toolchain-bridge
+    paths:
+      - .github/workflows/chatgpt-nuget-bridge.yml
+
+jobs:
+  restore-packages:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Create dependency probe project
+        run: |
+          mkdir -p probe
+          cat > probe/probe.csproj <<'EOF'
+          <Project Sdk="Microsoft.NET.Sdk">
+            <PropertyGroup>
+              <TargetFramework>net8.0</TargetFramework>
+            </PropertyGroup>
+            <ItemGroup>
+              <PackageReference Include="Godot.NET.Sdk" Version="4.7.1" GeneratePathProperty="true" />
+              <PackageReference Include="GodotSharp" Version="4.7.1" />
+              <PackageReference Include="Godot.SourceGenerators" Version="4.7.1" />
+              <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.*" />
+              <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.*" />
+            </ItemGroup>
+          </Project>
+          EOF
+          dotnet restore probe/probe.csproj
+
+      - name: Copy required NuGet package cache
+        run: |
+          mkdir -p bridge/nuget
+          cp -a ~/.nuget/packages/. bridge/nuget/
+          du -sh bridge/nuget
+
+      - name: Upload NuGet cache
+        uses: actions/upload-artifact@v4
+        with:
+          name: ufopia-nuget-cache-4.7.1-net8
+          path: bridge/
+          compression-level: 6
+          retention-days: 1
+          if-no-files-found: error
